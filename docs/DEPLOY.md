@@ -105,7 +105,7 @@ Vite の Host チェックで `403 Blocked request` になりません。
 | `PUBLIC_HOST` | `dev.example.com`（未設定なら `.env` の `NUXT_DEV_ALLOWED_HOSTS`） | トンネルのホスト名（dev の Host 許可に使用） |
 
 スクリプトは `.env` から `NUXT_DEV_ALLOWED_HOSTS` / `NUXT_APP_BASE_URL` を読みます
-（優先順位は `PUBLIC_*` > `.env` > 既存の環境変数 > 既定値）。書いておけば `PUBLIC_*` を都度渡さずに同じ設定で起動できます。
+（優先順位は `PUBLIC_*` > `.env` > 既定値。周囲の環境変数には影響されません）。書いておけば `PUBLIC_*` を都度渡さずに同じ設定で起動できます。
 
 ログは `/tmp/vocaloid-hz-public-<PORT>.log`、PID は `/tmp/vocaloid-hz-public-<PORT>.pid` に置かれます
 （ポートごとに分かれているので、別ポートで起動しても取り違えません）。

@@ -18,8 +18,8 @@
 #     PUBLIC_HOST      トンネルのホスト名（カンマ区切りで複数可。既定 dev.example.com）。
 #                      dev モードでは NUXT_DEV_ALLOWED_HOSTS に渡すので、
 #                      Vite の Host チェック（DNS リバインディング対策）で弾かれない。
-#     PUBLIC_* を省略した場合は .env の NUXT_DEV_ALLOWED_HOSTS / NUXT_APP_BASE_URL を流用する。
-#     （このスクリプトは .env を読み込む。すでに設定済みの環境変数が優先される）
+#     PUBLIC_* を省略した場合は .env の NUXT_DEV_ALLOWED_HOSTS / NUXT_APP_BASE_URL を使う
+#     （.env に無ければ ルート配信 / dev.example.com。周囲の環境変数には影響されない）
 #
 #   トンネル側は次のように向ける（設定は環境ごとに用意する）:
 #     <PUBLIC_HOST> / Path ^/vocaloid-hz/.* → http://127.0.0.1:3120
@@ -51,10 +51,11 @@ dotenv_get() {
 }
 
 PORT="${PUBLIC_PORT:-3120}"
+# 起動設定は PUBLIC_* と .env だけで決める（周囲の環境変数に引きずられないよう、子プロセスへは必ず明示的に渡す）
 BASE="${PUBLIC_BASE_PATH:-$(dotenv_get NUXT_APP_BASE_URL)}"
+[ -n "$BASE" ] || BASE="/"
 HOST="${PUBLIC_HOST:-$(dotenv_get NUXT_DEV_ALLOWED_HOSTS)}"
-[ -n "$BASE" ] || BASE="${NUXT_APP_BASE_URL:-/}"
-[ -n "$HOST" ] || HOST="${NUXT_DEV_ALLOWED_HOSTS:-dev.example.com}"
+[ -n "$HOST" ] || HOST="dev.example.com"
 # PID / ログはポート単位にする（別ポートで起動したときに取り違えないため）
 PID_FILE="/tmp/vocaloid-hz-public-${PORT}.pid"
 LOG_FILE="/tmp/vocaloid-hz-public-${PORT}.log"
