@@ -47,7 +47,13 @@ stop_all() {
   if is_running; then
     kill "$(cat "$PID_FILE")" 2>/dev/null || true
   fi
-  # npm / vite の子プロセスも落とす（dev モードは孫プロセスまで残るため）
+  # nuxt は起動後にプロセス名（argv）を書き換えるため、pkill だけでは取り逃す。
+  # ポートを掴んでいるプロセスを直接落としてから、念のため pkill もかける。
+  if command -v lsof >/dev/null 2>&1; then
+    for pid in $(lsof -nP -tiTCP:"${PORT}" -sTCP:LISTEN 2>/dev/null); do
+      kill "$pid" 2>/dev/null || true
+    done
+  fi
   pkill -f "nuxt dev --host 127.0.0.1 --port ${PORT}" 2>/dev/null || true
   rm -f "$PID_FILE"
 }
