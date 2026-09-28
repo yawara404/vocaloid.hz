@@ -1,0 +1,577 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * =============================================================================
+ *  デザイントークン（Phase 1）
+ * -----------------------------------------------------------------------------
+ *  色は「RGB 3値の CSS カスタムプロパティ」で定義し、Tailwind 側
+ *  （tailwind.config.ts）が `rgb(var(--token) / <alpha-value>)` として参照する。
+ *  こうすると `bg-ink-900` `text-stone-400` のような既存クラスも、
+ *  テーマを切り替えるだけで色が入れ替わる。
+ *
+ *    ライトモード（白 × 水色）  → :root / html[data-theme='light']
+ *    ダークモード（夜の暗い部屋）→ html[data-theme='dark']
+ *
+ *  実際の切り替えは <html data-theme="..."> の属性で行い、初回描画の前に
+ *  nuxt.config.ts のインラインスクリプトが localStorage / OS 設定を見て決める
+ *  （白い画面が一瞬光る FOUC を避けるため）。切り替え UI は composables/useTheme.ts。
+ *
+ *  水色の使い分け（ライトモードの鉄則）:
+ *    文字・アイコン → 濃い水色（--hz-300 / --color-primary = #0284C7 系, WCAG AA 準拠）
+ *    ボタンの塗り   → 鮮やかな水色（--color-action = #38BDF8）+ 濃紺の文字
+ * =============================================================================
+ */
+@layer base {
+  :root,
+  html[data-theme='light'] {
+    color-scheme: light;
+
+    /* --- 面: 背景はオフホワイト、カードは純白でレイヤーを分ける --- */
+    --color-bg-base: 246 249 250;        /* #F6F9FA ページ全体 */
+    --color-bg-surface: 255 255 255;     /* #FFFFFF カード / ヘッダー */
+    --color-bg-subtle: 237 244 247;      /* #EDF4F7 検索窓・タグ・インラインコード */
+    --color-bg-sunken: 226 236 241;      /* #E2ECF1 メーターの空き・薄い区切り */
+    --color-bg-code: 246 249 250;        /* コードブロックの下地 */
+
+    /* カード（.panel）の塗りと枠。ダークでは今までどおり半透明のガラス面。 */
+    --panel-alpha: 1;
+    --panel-border-alpha: 1;
+
+    /* --- 線 --- */
+    --color-border: 225 235 240;         /* #E1EBF0 淡い水色ボーダー */
+    --color-border-strong: 202 218 226;  /* #CADAE2 */
+
+    /* --- 入力欄 --- */
+    --color-field-bg: 237 244 247;
+    --color-field-bg-alpha: 1;
+    --color-field-border: 202 218 226;
+    --color-field-placeholder: 91 112 123;  /* #5B707B */
+
+    /* --- 文字: 本文は濃いスレートネイビー、メタ情報はブルーグレー --- */
+    --color-text-main: 22 34 41;         /* #162229 見出し・本文の基本 */
+    --color-text-body: 34 51 59;         /* #22333B 本文 */
+    --color-text-muted: 91 112 123;      /* #5B707B メタ情報・日付・執筆者 */
+    --color-text-faint: 122 143 154;     /* #7A8F9A プレースホルダー */
+
+    /* --- 水色アクセント --- */
+    --color-primary: 3 105 161;          /* #0369A1 テキスト・アイコン・フォーカス (5.9:1) */
+    --color-primary-strong: 7 89 133;    /* #075985 ホバー時 */
+    --color-action: 56 189 248;          /* #38BDF8 アクションボタンの塗り */
+    --color-action-hover: 14 165 233;    /* #0EA5E9 */
+    --color-action-text: 8 47 73;        /* #082F49 ボタン内テキスト */
+
+    /* --- 注意・強調（琥珀） --- */
+    --glow-300: 180 83 9;
+    --glow-400: 146 64 14;
+    --glow-500: 217 119 6;
+    --glow-600: 120 53 15;
+    --glow-700: 69 26 3;
+
+    /* --- 影 --- */
+    --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+    --shadow-bar: 0 -8px 24px rgba(15, 23, 42, 0.10);
+    --shadow-ribbon: 0 1px 4px rgba(15, 23, 42, 0.18);
+    --shadow-player: 0 12px 32px rgba(15, 23, 42, 0.22);
+    --shadow-modal: 0 24px 60px rgba(15, 23, 42, 0.22);
+    --scrim: rgba(15, 23, 42, 0.45);
+
+    /* --- その他の細部 --- */
+    --focus-ring: #0284c7;
+    --selection-bg: rgba(56, 189, 248, 0.3);
+    --selection-text: #082f49;
+    --scrollbar-thumb: #bad3e0;
+    --grain-line: rgba(15, 23, 42, 0.022);
+    --wave-color: rgba(2, 132, 199, 0.45);
+    --body-glow:
+      radial-gradient(1200px 600px at 80% -10%, rgba(56, 189, 248, 0.12), transparent 60%),
+      radial-gradient(900px 500px at 0% 0%, rgba(186, 230, 253, 0.5), transparent 55%);
+
+    /* --- 既存クラス用のランプ（ink / hz / glow / stone）: ライトでは明暗を反転 --- */
+    --ink-950: 246 249 250;
+    --ink-900: 255 255 255;
+    --ink-850: 237 244 247;
+    --ink-800: 226 236 241;
+    --ink-750: 202 218 226;
+    --ink-700: 225 235 240;
+    --ink-600: 186 214 227;
+    --ink-500: 159 182 193;
+
+    --hz-50: 8 47 73;        /* #082F49 */
+    --hz-100: 12 74 110;     /* #0C4A6E */
+    --hz-200: 7 89 133;      /* #075985  ホバー文字 (7.4:1) */
+    --hz-300: 3 105 161;     /* #0369A1  見出し・リンク (5.9:1) */
+    --hz-400: 2 132 199;     /* #0284C7  ホバーの枠線 */
+    --hz-500: 14 165 233;    /* #0EA5E9  塗り・メーター・選択中のチップ */
+    --hz-600: 56 189 248;    /* #38BDF8  淡い枠線・フォーカス */
+    --hz-700: 125 211 252;   /* #7DD3FC  さらに淡い枠線 */
+
+    --stone-50: 8 20 24;
+    --stone-100: 13 27 33;
+    --stone-200: 22 38 46;
+    --stone-300: 34 51 59;
+    --stone-400: 91 112 123;
+    --stone-500: 110 133 144;   /* #6E8590 */
+    --stone-600: 169 189 199;
+    --stone-700: 180 198 208;
+    --stone-800: 223 232 237;
+    --stone-900: 237 242 245;
+    --stone-950: 246 249 250;
+  }
+
+  /* 現行のダークモード。ここに書いた値が「夜の部屋」の基準。 */
+  html[data-theme='dark'] {
+    color-scheme: dark;
+
+    --color-bg-base: 7 8 11;             /* #07080B */
+    --color-bg-surface: 11 13 18;        /* #0B0D12 */
+    --color-bg-subtle: 16 19 25;         /* #101319 */
+    --color-bg-sunken: 21 25 34;         /* #151922 */
+    --color-bg-code: 11 13 18;
+
+    --panel-alpha: 0.7;
+    --panel-border-alpha: 0.7;
+
+    --color-border: 35 42 55;            /* #232A37 */
+    --color-border-strong: 48 57 73;     /* #303949 */
+
+    --color-field-bg: 7 8 11;
+    --color-field-bg-alpha: 0.6;
+    --color-field-border: 35 42 55;
+    --color-field-placeholder: 120 113 108;
+
+    --color-text-main: 241 245 249;      /* #F1F5F9 */
+    --color-text-body: 214 211 209;      /* #D6D3D1 */
+    --color-text-muted: 168 162 158;     /* #A8A29E */
+    --color-text-faint: 120 113 108;     /* #78716C */
+
+    --color-primary: 45 212 191;         /* #2DD4BF */
+    --color-primary-strong: 94 234 212;  /* #5EEAD4 */
+    --color-action: 31 184 162;          /* #1FB8A2 */
+    --color-action-hover: 52 211 187;    /* #34D3BB */
+    --color-action-text: 7 8 11;         /* #07080B */
+
+    --glow-300: 252 217 160;
+    --glow-400: 245 184 97;
+    --glow-500: 227 154 53;
+    --glow-600: 176 116 34;
+    --glow-700: 146 94 25;
+
+    --shadow-card: none;
+    --shadow-bar: 0 -12px 32px rgba(0, 0, 0, 0.35);
+    --shadow-ribbon: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-player: 0 12px 36px rgba(0, 0, 0, 0.65);
+    --shadow-modal: 0 24px 60px rgba(0, 0, 0, 0.6);
+    --scrim: rgba(7, 8, 11, 0.8);
+
+    --focus-ring: #34d3bb;
+    --selection-bg: rgba(31, 184, 162, 0.3);
+    --selection-text: #ffffff;
+    --scrollbar-thumb: #303949;
+    --grain-line: rgba(255, 255, 255, 0.015);
+    --wave-color: rgba(94, 234, 212, 0.4);
+    --body-glow:
+      radial-gradient(1200px 600px at 80% -10%, rgba(31, 184, 162, 0.09), transparent 60%),
+      radial-gradient(900px 500px at 0% 0%, rgba(245, 184, 97, 0.05), transparent 55%);
+
+    --ink-950: 7 8 11;
+    --ink-900: 11 13 18;
+    --ink-850: 16 19 25;
+    --ink-800: 21 25 34;
+    --ink-750: 27 32 43;
+    --ink-700: 35 42 55;
+    --ink-600: 48 57 73;
+    --ink-500: 74 84 104;
+
+    --hz-50: 239 252 249;
+    --hz-100: 200 247 238;
+    --hz-200: 147 239 223;
+    --hz-300: 94 234 212;
+    --hz-400: 52 211 187;
+    --hz-500: 31 184 162;
+    --hz-600: 21 147 133;
+    --hz-700: 18 117 107;
+
+    --stone-50: 250 250 249;
+    --stone-100: 245 245 244;
+    --stone-200: 231 229 228;
+    --stone-300: 214 211 209;
+    --stone-400: 168 162 158;
+    --stone-500: 120 113 108;
+    --stone-600: 87 83 78;
+    --stone-700: 68 64 60;
+    --stone-800: 41 37 36;
+    --stone-900: 28 25 23;
+    --stone-950: 12 10 9;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-sans antialiased;
+    background-color: rgb(var(--color-bg-base));
+    color: rgb(var(--color-text-body));
+    font-feature-settings: 'palt' 1;
+    background-image: var(--body-glow);
+    background-attachment: fixed;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  ::selection {
+    background-color: var(--selection-bg);
+    color: var(--selection-text);
+  }
+
+  /* 夜間の読書を妨げない、控えめなスクロールバー */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    @apply rounded-full;
+    background-color: var(--scrollbar-thumb);
+  }
+
+  /*
+   * モバイル: 入力欄の文字が 16px 未満だと、iOS が focus 時に画面を勝手に拡大する。
+   * 16px に揃えて、検索欄やチャット入力で拡大しないようにする。
+   */
+  @media (max-width: 640px) {
+    body input:not([type='range']):not([type='checkbox']):not([type='radio']),
+    body select,
+    body textarea {
+      font-size: 16px !important;
+    }
+  }
+
+  /* キーボード操作時に、いまどこにフォーカスがあるかをはっきり見せる */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* アニメーションを減らす設定の環境では、テーマ切り替えの淡い変化も止める */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    body,
+    .panel {
+      transition: none;
+    }
+  }
+}
+
+@layer components {
+  /*
+   * カード / サイドバー / ヘッダーなどの面。
+   * ライトでは「純白 + 淡い水色の枠 + ごく薄い影」、ダークでは今までどおり
+   * 半透明のガラス面（影なし）になる。
+   */
+  .panel {
+    @apply rounded-xl backdrop-blur-sm;
+    border: 1px solid rgb(var(--color-border) / var(--panel-border-alpha));
+    background-color: rgb(var(--color-bg-surface) / var(--panel-alpha));
+    box-shadow: var(--shadow-card);
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .panel-title {
+    @apply text-[11.5px] font-semibold uppercase tracking-[0.22em] text-hz-300;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-ink-700 bg-ink-850/80 px-2.5 py-1.5 text-[11.5px] text-stone-300 transition;
+  }
+
+  /* ホバーで少し明るく（ライトモード: 薄水色 → 白に近づく） */
+  .chip:hover {
+    @apply border-hz-600/60 bg-surface text-hz-200;
+  }
+
+  /*
+   * アクションボタン。ライトモードでは「鮮やかな水色の塗り + 濃紺の文字」にして
+   * 白背景でもコントラスト（WCAG AA）を確保する。色はトークン側で切り替わる。
+   */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+    background-color: rgb(var(--color-action));
+    color: rgb(var(--color-action-text));
+  }
+
+  .btn-primary:hover {
+    background-color: rgb(var(--color-action-hover));
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-ink-700 bg-ink-850/60 px-4 py-2 text-sm text-stone-300 transition hover:border-hz-600/60 hover:text-hz-200 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .field {
+    @apply w-full rounded-md px-3 py-2 text-sm outline-none transition;
+    border: 1px solid rgb(var(--color-field-border));
+    background-color: rgb(var(--color-field-bg) / var(--color-field-bg-alpha));
+    color: rgb(var(--color-text-main));
+  }
+
+  .field::placeholder {
+    color: rgb(var(--color-field-placeholder));
+  }
+
+  .field:focus {
+    border-color: rgb(var(--color-primary) / 0.7);
+    box-shadow: 0 0 0 1px rgb(var(--color-primary) / 0.4);
+  }
+
+  .label {
+    @apply mb-1.5 block text-[11.5px] font-semibold uppercase tracking-[0.18em] text-stone-400;
+  }
+
+  .section-title {
+    @apply text-[11.5px] font-semibold uppercase tracking-[0.24em] text-hz-300;
+  }
+
+  .link-quiet {
+    @apply text-hz-200 underline decoration-hz-500/40 underline-offset-4 transition hover:text-hz-100 hover:decoration-hz-300;
+  }
+
+  /*
+   * テーマ切り替えボタン（AppHeader）。
+   * どちらのアイコンを出すかは <html data-theme> に連動する CSS で決める。
+   * JS の状態に依存しないので、ハイドレーション直後でもちらつかない。
+   *   ライト表示中 → 月（押すと暗い部屋へ）
+   *   ダーク表示中 → 太陽（押すと白い部屋へ）
+   */
+  .theme-toggle .theme-icon-sun {
+    display: none;
+  }
+
+  .theme-toggle .theme-icon-moon {
+    display: block;
+  }
+
+  html[data-theme='dark'] .theme-toggle .theme-icon-sun {
+    display: block;
+  }
+
+  html[data-theme='dark'] .theme-toggle .theme-icon-moon {
+    display: none;
+  }
+}
+
+@layer utilities {
+  .tracking-jp {
+    letter-spacing: 0.03em;
+  }
+
+  .hz-grain {
+    background-image: repeating-linear-gradient(
+      0deg,
+      var(--grain-line) 0px,
+      var(--grain-line) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+
+  .wave-underline {
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: var(--wave-color);
+    text-underline-offset: 4px;
+  }
+}
+
+/* ---------------------------------------------------------------
+   批評本文（markdown-it の出力）用のタイポグラフィ
+   --------------------------------------------------------------- */
+.review-body {
+  color: rgb(var(--color-text-body));
+  font-size: 1.0625rem;
+  line-height: 1.85;
+  letter-spacing: 0.03em;
+  word-break: break-word;
+}
+
+.review-body > *:first-child {
+  margin-top: 0;
+}
+
+/* 目次・アンカーから飛んだとき、固定ヘッダー（56px）に隠れないようにする */
+.review-body :is(h1, h2, h3, h4, h5, h6) {
+  scroll-margin-top: 84px;
+}
+
+.review-body > *:last-child {
+  margin-bottom: 0;
+}
+
+.review-body p {
+  margin: 1.5em 0;
+}
+
+.review-body h2 {
+  margin: 2.4em 0 1em;
+  padding-left: 0.75em;
+  border-left: 3px solid rgb(var(--color-primary));
+  color: rgb(var(--color-text-main));
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+}
+
+.review-body h3 {
+  margin: 2em 0 0.8em;
+  color: rgb(var(--color-text-main));
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.review-body h4,
+.review-body h5,
+.review-body h6 {
+  margin: 1.6em 0 0.6em;
+  color: rgb(var(--color-text-body));
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.review-body ul,
+.review-body ol {
+  margin: 1.4em 0;
+  padding-left: 1.4em;
+}
+
+.review-body ul {
+  list-style: disc;
+}
+
+.review-body ol {
+  list-style: decimal;
+}
+
+.review-body li {
+  margin: 0.5em 0;
+}
+
+.review-body li::marker {
+  color: rgb(var(--color-primary));
+}
+
+.review-body blockquote {
+  margin: 1.8em 0;
+  padding: 0.2em 0 0.2em 1em;
+  border-left: 2px solid rgb(var(--color-primary));
+  color: rgb(var(--color-text-body));
+}
+
+.review-body a {
+  color: rgb(var(--color-primary));
+  text-decoration: underline;
+  text-decoration-color: rgb(var(--color-primary) / 0.35);
+  text-underline-offset: 3px;
+}
+
+.review-body a:hover {
+  color: rgb(var(--color-primary-strong));
+}
+
+.review-body code {
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+  background: rgb(var(--color-bg-subtle));
+  color: rgb(var(--glow-300));
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.review-body pre {
+  margin: 1.8em 0;
+  padding: 1em;
+  overflow-x: auto;
+  border: 1px solid rgb(var(--color-border));
+  border-radius: 0.5rem;
+  background: rgb(var(--color-bg-code));
+}
+
+.review-body pre code {
+  padding: 0;
+  background: transparent;
+  color: rgb(var(--color-text-body));
+}
+
+.review-body hr {
+  margin: 2.4em 0;
+  border: 0;
+  border-top: 1px solid rgb(var(--color-border));
+}
+
+.review-body img {
+  margin: 1.8em 0;
+  border: 1px solid rgb(var(--color-border));
+  border-radius: 0.5rem;
+}
+
+.review-body table {
+  width: 100%;
+  margin: 1.8em 0;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+.review-body th,
+.review-body td {
+  padding: 0.5em 0.75em;
+  border: 1px solid rgb(var(--color-border));
+  text-align: left;
+}
+
+.review-body th {
+  border-color: rgb(var(--color-border-strong));
+  color: rgb(var(--color-text-main));
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------
+   タイムスタンプ連動ボタン（批評本文中の [01:23] 記法）
+   --------------------------------------------------------------- */
+.timestamp-btn {
+  @apply mx-0.5 inline-flex -translate-y-px items-center gap-1 rounded border border-hz-600/50 bg-hz-500/10 px-1.5 py-[1px] align-baseline font-mono text-[0.85em] font-medium text-hz-200 transition;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.timestamp-btn:hover {
+  @apply border-hz-400 bg-hz-500/25 text-hz-50;
+  box-shadow: 0 0 0 3px rgb(var(--color-primary) / 0.12);
+}
+
+.timestamp-btn:focus-visible {
+  @apply outline-none;
+  box-shadow: 0 0 0 3px rgb(var(--color-primary) / 0.35);
+}
+
+.timestamp-btn::before {
+  content: '▶';
+  font-size: 0.72em;
+  opacity: 0.75;
+}
+
+.timestamp-btn.is-active {
+  @apply border-glow-400 bg-glow-400/20 text-glow-300;
+}
+
+.timestamp-btn.is-active::before {
+  content: '❚❚';
+}

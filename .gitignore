@@ -1,0 +1,23 @@
+# 依存関係 / ビルド成果物
+node_modules/
+.nuxt/
+.output/
+dist/
+
+# 環境変数（API キーや OAuth の秘密情報を含むためコミットしない）
+.env
+.env.*
+!.env.example
+
+# SQLite（会話ログなど実行時のデータを含むため公開しない）
+data/*.db
+data/*.db-*
+data/*.sqlite
+data/*.sqlite-*
+
+# エディタ / OS
+.DS_Store
+.vscode/
+.idea/
+*.log
+*.pid
