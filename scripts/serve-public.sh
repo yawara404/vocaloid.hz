@@ -28,33 +28,33 @@ set -eu
 
 cd "$(dirname "$0")/.."
 
-# .env があれば読み込む（すでに設定済みの環境変数は上書きしない）。
-# PUBLIC_HOST / PUBLIC_BASE_PATH を渡さなくても、.env の
-# NUXT_DEV_ALLOWED_HOSTS / NUXT_APP_BASE_URL から同じ設定を復元できるようにする。
-if [ -f .env ]; then
+# .env からトンネル公開に必要な 2 つだけ読む。
+# 採用の優先順位は  PUBLIC_*  >  .env  >  既存の環境変数  >  既定値。
+# （個人のホスト名・配信パスをリポジトリに書かずに済ませるための読み込み）
+dotenv_get() {
+  [ -f .env ] || return 0
   while IFS= read -r line || [ -n "$line" ]; do
     line=$(printf '%s' "$line" | tr -d '\r')
     case "$line" in
       ''|'#'*) continue ;;
     esac
-    key=${line%%=*}
-    value=${line#*=}
-    # 変数名として不正な行は無視する
-    case "$key" in
-      ''|[0-9]*|*[!A-Za-z0-9_]*) continue ;;
+    case "${line%%=*}" in
+      "$1") ;;
+      *) continue ;;
     esac
+    value=${line#*=}
     # 前後の引用符を外す
     value=${value%\"}; value=${value#\"}
-    # 既存の環境変数を優先する
-    if ! printenv "$key" >/dev/null 2>&1; then
-      export "$key=$value"
-    fi
+    printf '%s' "$value"
+    return 0
   done < .env
-fi
+}
 
 PORT="${PUBLIC_PORT:-3120}"
-BASE="${PUBLIC_BASE_PATH:-${NUXT_APP_BASE_URL:-/}}"
-HOST="${PUBLIC_HOST:-${NUXT_DEV_ALLOWED_HOSTS:-dev.example.com}}"
+BASE="${PUBLIC_BASE_PATH:-$(dotenv_get NUXT_APP_BASE_URL)}"
+HOST="${PUBLIC_HOST:-$(dotenv_get NUXT_DEV_ALLOWED_HOSTS)}"
+[ -n "$BASE" ] || BASE="${NUXT_APP_BASE_URL:-/}"
+[ -n "$HOST" ] || HOST="${NUXT_DEV_ALLOWED_HOSTS:-dev.example.com}"
 # PID / ログはポート単位にする（別ポートで起動したときに取り違えないため）
 PID_FILE="/tmp/vocaloid-hz-public-${PORT}.pid"
 LOG_FILE="/tmp/vocaloid-hz-public-${PORT}.log"

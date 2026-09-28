@@ -40,6 +40,35 @@ OAuth を使う場合は、各プロバイダーのリダイレクト URI を本
   タイムアウトを余裕をもって設定してください。
 - **アップロード無制限ではない**: 掲示板・ラウンジの投稿は 500 文字までです（`server/api/*/messages.post.ts`）。
 
+### Cloudflare Workers でサブパスだけ転送する例
+
+トンネルをそのまま公開せず、既存の Worker（別サイトと同じホスト名でサブパスだけ切り出したい場合）から
+転送することもできます。`pathname` が対象サブパスのときだけトンネルのホストへ流します。
+
+```js
+export default {
+  async fetch(request) {
+    const url = new URL(request.url)
+
+    // /vocaloid-hz/ だけをトンネル（origin.example.com）へ流す
+    if (url.pathname === '/vocaloid-hz' || url.pathname.startsWith('/vocaloid-hz/')) {
+      const upstream = new URL(request.url)
+      upstream.hostname = 'origin.example.com' // ← トンネルのホスト名
+      return fetch(new Request(upstream, request))
+    }
+
+    // それ以外は既存の処理へ（別サイトの配信など）
+    return fetch(request)
+  },
+}
+```
+
+- Worker からの転送では **Host がトンネルのホスト名に変わる**ため、そのホスト名を
+  `NUXT_DEV_ALLOWED_HOSTS`（本番は不要）に含めておく必要があります。
+- SSE（`/api/board/events`・`/api/lounge/events`）と Vite の HMR WebSocket は
+  そのまま `fetch` で中継できます（ストリームをバッファリングしないこと）。
+- ルート配信にしたい場合は `NUXT_APP_BASE_URL` を付けずにビルドし、Worker 側でパスを書き換えます。
+
 ### Cloudflare Tunnel の例
 
 ```yaml
@@ -75,8 +104,8 @@ Vite の Host チェックで `403 Blocked request` になりません。
 | `PUBLIC_BASE_PATH` | `/`（未設定なら `.env` の `NUXT_APP_BASE_URL`） | 配信パス（末尾スラッシュは自動補完） |
 | `PUBLIC_HOST` | `dev.example.com`（未設定なら `.env` の `NUXT_DEV_ALLOWED_HOSTS`） | トンネルのホスト名（dev の Host 許可に使用） |
 
-スクリプトは `.env` を読み込む（既に設定済みの環境変数が優先される）ため、
-`NUXT_DEV_ALLOWED_HOSTS` / `NUXT_APP_BASE_URL` を書いておけば `PUBLIC_*` を都度渡さずに同じ設定で起動できます。
+スクリプトは `.env` から `NUXT_DEV_ALLOWED_HOSTS` / `NUXT_APP_BASE_URL` を読みます
+（優先順位は `PUBLIC_*` > `.env` > 既存の環境変数 > 既定値）。書いておけば `PUBLIC_*` を都度渡さずに同じ設定で起動できます。
 
 ログは `/tmp/vocaloid-hz-public-<PORT>.log`、PID は `/tmp/vocaloid-hz-public-<PORT>.pid` に置かれます
 （ポートごとに分かれているので、別ポートで起動しても取り違えません）。
