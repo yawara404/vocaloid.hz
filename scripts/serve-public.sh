@@ -30,8 +30,9 @@ cd "$(dirname "$0")/.."
 PORT="${PUBLIC_PORT:-3120}"
 BASE="${PUBLIC_BASE_PATH:-${NUXT_APP_BASE_URL:-/}}"
 HOST="${PUBLIC_HOST:-${NUXT_DEV_ALLOWED_HOSTS:-dev.example.com}}"
-PID_FILE="/tmp/vocaloid-hz-public.pid"
-LOG_FILE="/tmp/vocaloid-hz-public.log"
+# PID / ログはポート単位にする（別ポートで起動したときに取り違えないため）
+PID_FILE="/tmp/vocaloid-hz-public-${PORT}.pid"
+LOG_FILE="/tmp/vocaloid-hz-public-${PORT}.log"
 
 # サブパス配信のときは末尾に / を付ける（Nuxt の baseURL と揃える）
 case "$BASE" in
