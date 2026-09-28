@@ -15,10 +15,11 @@
 #   環境変数:
 #     PUBLIC_PORT      待ち受けポート（既定 3120）
 #     PUBLIC_BASE_PATH 配信パス（既定 / 。末尾スラッシュは自動で補う）
-#     PUBLIC_HOST      トンネルのホスト名（既定 dev.example.com）。
+#     PUBLIC_HOST      トンネルのホスト名（カンマ区切りで複数可。既定 dev.example.com）。
 #                      dev モードでは NUXT_DEV_ALLOWED_HOSTS に渡すので、
 #                      Vite の Host チェック（DNS リバインディング対策）で弾かれない。
-#     PUBLIC_* が無いときは .env の NUXT_DEV_ALLOWED_HOSTS / NUXT_APP_BASE_URL を流用する。
+#     PUBLIC_* を省略した場合は .env の NUXT_DEV_ALLOWED_HOSTS / NUXT_APP_BASE_URL を流用する。
+#     （このスクリプトは .env を読み込む。すでに設定済みの環境変数が優先される）
 #
 #   トンネル側は次のように向ける（設定は環境ごとに用意する）:
 #     <PUBLIC_HOST> / Path ^/vocaloid-hz/.* → http://127.0.0.1:3120
@@ -26,6 +27,30 @@
 set -eu
 
 cd "$(dirname "$0")/.."
+
+# .env があれば読み込む（すでに設定済みの環境変数は上書きしない）。
+# PUBLIC_HOST / PUBLIC_BASE_PATH を渡さなくても、.env の
+# NUXT_DEV_ALLOWED_HOSTS / NUXT_APP_BASE_URL から同じ設定を復元できるようにする。
+if [ -f .env ]; then
+  while IFS= read -r line || [ -n "$line" ]; do
+    line=$(printf '%s' "$line" | tr -d '\r')
+    case "$line" in
+      ''|'#'*) continue ;;
+    esac
+    key=${line%%=*}
+    value=${line#*=}
+    # 変数名として不正な行は無視する
+    case "$key" in
+      ''|[0-9]*|*[!A-Za-z0-9_]*) continue ;;
+    esac
+    # 前後の引用符を外す
+    value=${value%\"}; value=${value#\"}
+    # 既存の環境変数を優先する
+    if ! printenv "$key" >/dev/null 2>&1; then
+      export "$key=$value"
+    fi
+  done < .env
+fi
 
 PORT="${PUBLIC_PORT:-3120}"
 BASE="${PUBLIC_BASE_PATH:-${NUXT_APP_BASE_URL:-/}}"
