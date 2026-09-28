@@ -72,8 +72,11 @@ Vite の Host チェックで `403 Blocked request` になりません。
 | 環境変数 | 既定 | 内容 |
 | :--- | :--- | :--- |
 | `PUBLIC_PORT` | `3120` | 待ち受けポート |
-| `PUBLIC_BASE_PATH` | `/` | 配信パス（末尾スラッシュは自動補完） |
-| `PUBLIC_HOST` | `dev.example.com` | トンネルのホスト名（dev の Host 許可に使用） |
+| `PUBLIC_BASE_PATH` | `/`（未設定なら `.env` の `NUXT_APP_BASE_URL`） | 配信パス（末尾スラッシュは自動補完） |
+| `PUBLIC_HOST` | `dev.example.com`（未設定なら `.env` の `NUXT_DEV_ALLOWED_HOSTS`） | トンネルのホスト名（dev の Host 許可に使用） |
+
+`.env` に `NUXT_DEV_ALLOWED_HOSTS` / `NUXT_APP_BASE_URL` を書いておけば、`PUBLIC_*` を都度渡さなくても
+同じ設定で起動できます（`npm run dev` を直接叩く場合も Host 許可とサブパスが揃います）。
 
 ログは `/tmp/vocaloid-hz-public.log`、PID は `/tmp/vocaloid-hz-public.pid` に置かれます。
 

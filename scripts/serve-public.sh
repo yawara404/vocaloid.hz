@@ -18,6 +18,7 @@
 #     PUBLIC_HOST      トンネルのホスト名（既定 dev.example.com）。
 #                      dev モードでは NUXT_DEV_ALLOWED_HOSTS に渡すので、
 #                      Vite の Host チェック（DNS リバインディング対策）で弾かれない。
+#     PUBLIC_* が無いときは .env の NUXT_DEV_ALLOWED_HOSTS / NUXT_APP_BASE_URL を流用する。
 #
 #   トンネル側は次のように向ける（設定は環境ごとに用意する）:
 #     <PUBLIC_HOST> / Path ^/vocaloid-hz/.* → http://127.0.0.1:3120
@@ -27,8 +28,8 @@ set -eu
 cd "$(dirname "$0")/.."
 
 PORT="${PUBLIC_PORT:-3120}"
-BASE="${PUBLIC_BASE_PATH:-/}"
-HOST="${PUBLIC_HOST:-dev.example.com}"
+BASE="${PUBLIC_BASE_PATH:-${NUXT_APP_BASE_URL:-/}}"
+HOST="${PUBLIC_HOST:-${NUXT_DEV_ALLOWED_HOSTS:-dev.example.com}}"
 PID_FILE="/tmp/vocaloid-hz-public.pid"
 LOG_FILE="/tmp/vocaloid-hz-public.log"
 
