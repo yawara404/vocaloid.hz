@@ -13,7 +13,7 @@
 ```bash
 npm install
 cp .env.example .env   # 未設定のままで起動できます
-npm run dev            # http://localhost:3000
+npm run dev            # http://localhost:3000（NUXT_APP_BASE_URL を設定した場合は http://localhost:3000/Vocaloid.hz/）
 ```
 
 初回起動時に次が自動で行われます。
@@ -75,7 +75,9 @@ curl http://localhost:11434/api/ps   # ロード中のモデルを確認
    `http://localhost:3000/api/auth/oauth/discord/callback` を追加
 3. `.env` に client id / secret を設定して dev サーバーを再起動
 
-本番ではリダイレクト URI を本番の origin に置き換えてください（`<origin>/api/auth/oauth/<provider>/callback`）。
+本番ではリダイレクト URI を本番の URL に置き換えます。サブパス配信（`NUXT_APP_BASE_URL`）を使う場合は
+**baseURL を含めて**登録してください（例: `https://example.com/Vocaloid.hz/api/auth/oauth/google/callback`）。
+形式は `<origin><NUXT_APP_BASE_URL>/api/auth/oauth/<provider>/callback` です。
 
 ## 6. YouTube Data API（任意）
 

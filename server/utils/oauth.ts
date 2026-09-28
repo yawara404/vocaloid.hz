@@ -53,7 +53,9 @@ export function isProviderEnabled(provider: OAuthProvider): boolean {
 
 export function redirectUri(event: H3Event, provider: OAuthProvider): string {
   const origin = getRequestURL(event).origin
-  return `${origin}/api/auth/oauth/${provider}/callback`
+  // サブパス配信（NUXT_APP_BASE_URL）でも正しい URI になるよう baseURL を前置する
+  const baseURL = (useRuntimeConfig().app.baseURL || '/').replace(/\/+$/, '')
+  return `${origin}${baseURL}/api/auth/oauth/${provider}/callback`
 }
 
 export function buildAuthorizeUrl(event: H3Event, provider: OAuthProvider, state: string): string {

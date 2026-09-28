@@ -34,12 +34,14 @@ git clone https://github.com/<your-account>/vocaloid.hz.git
 cd vocaloid.hz
 npm install
 cp .env.example .env   # 未設定でも起動できます（YouTube / Ollama / OAuth は任意）
-npm run dev            # http://localhost:3000
+npm run dev            # http://localhost:3000（サブパス配信にする場合は NUXT_APP_BASE_URL=/Vocaloid.hz/ を設定して http://localhost:3000/Vocaloid.hz/）
 ```
 
 - 必要環境: **Node.js 22.12 以上**（better-sqlite3 13 が Node 22 以上を要求）
 - 初回起動時に `data/vocaloid.hz.db` を作成し、デモユーザーと批評 7 本を seed します
 - AI ラウンジを使う場合は Ollama を起動して `ollama pull gemma3:4b`（[docs/SETUP.md](docs/SETUP.md)）
+- 公開は**サブパス配信**です（`NUXT_APP_BASE_URL=/Vocaloid.hz/`）。ビルド時に埋め込まれるため、
+  公開 URL もローカルの URL もベースパス `/Vocaloid.hz/` が付きます（[docs/DEPLOY.md](docs/DEPLOY.md)）
 
 ### デモアカウント
 
@@ -51,6 +53,9 @@ npm run dev            # http://localhost:3000
 パスワードは初回 seed にのみ使われ、`NUXT_SEED_PASSWORD` で変更できます（本番では必ず変更してください）。
 
 ## 画面
+
+パスは公開ベース（<https://track.wawa-app.me/Vocaloid.hz/>）からの相対です
+（例: `/reviews` → <https://track.wawa-app.me/Vocaloid.hz/reviews>）。
 
 | パス | 内容 |
 | :--- | :--- |
@@ -103,6 +108,8 @@ stores/      Pinia（auth / player）
 - `data/*.db` には投稿本文・セッションが入るため gitignore 済みです。バックアップも公開しないでください。
 - リバースプロキシやトンネルを挟む場合は `X-Forwarded-Proto: https` を渡してください
   （セッション cookie に `Secure` が付きます）。
+- **サブパス配信**のときは `NUXT_APP_BASE_URL` を末尾スラッシュ付きで指定してビルドします
+  （例: `/Vocaloid.hz/`）。値はビルド時に埋め込まれるため、変更したら再ビルドが必要です。
 - デモユーザーのパスワードは初回 seed のみに使われます。本番 seed 時は `NUXT_SEED_PASSWORD` を必ず変更してください。
 
 ## ライセンス
