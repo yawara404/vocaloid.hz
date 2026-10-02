@@ -120,3 +120,57 @@ Vite の Host チェックで `403 Blocked request` になりません。
 - **DB の初期化**: 投稿をすべて消したいときは `npm run db:reset`（開発用）。本番ではバックアップを取ってから。
 - **スキーマ更新**: `server/database/db.ts` の `SCHEMA_VERSION` を上げ、`initializeDatabase()` に
   差分の DDL を追加します（drizzle-kit のマイグレーションは未使用）。
+
+## 6. 検索エンジン向け（favicon / sitemap / Search Console）
+
+サブパス配信（`NUXT_APP_BASE_URL=/Vocaloid.hz/`）だと、置ける場所がホストのルートではないため、
+次の 2 点に注意します。
+
+### favicon
+
+| URL | 実体 | 備考 |
+| :--- | :--- | :--- |
+| `/<base>/favicon.svg` | `public/favicon.svg` | 白地に水色の「v」。字形はヘッダーのロゴと同じ（`ui-monospace` 太字） |
+| `/<base>/favicon.ico` | `public/favicon.ico` | 16/32/48/64 の 4 枚入り。SVG を見ない相手（タブ・検索エンジン）用 |
+
+- `nuxt.config.ts` の `head.link` は **baseURL を前置**して書きます（`{ rel: 'icon' }` の href は
+  Nuxt が自動で書き換えないため、前置しないと `https://<host>/favicon.ico` を指して別サイトを見に行きます）。
+- 名前が固定の URL は CDN / ブラウザに残ります。`?v=<FAVICON_VERSION>` を付けて別 URL として取得させ、
+  `routeRules` で `max-age=300` にしています。
+- 図案を差し替える手順:
+  1. `public/favicon.svg` の `<path>` を更新
+  2. `scripts/generate-favicon.mjs` の `GEOMETRY` を同じ座標に揃えて `node scripts/generate-favicon.mjs`
+  3. `nuxt.config.ts` の `FAVICON_VERSION` を上げる
+  4. `NUXT_APP_BASE_URL=/Vocaloid.hz/ npm run build` → `PUBLIC_BASE_PATH=/Vocaloid.hz/ ./scripts/serve-public.sh prod`
+- Cloudflare を通す場合、`/Vocaloid.hz/favicon.ico` などの**素の URL** は既定で 4 時間ほどエッジに残ります。
+  すぐ切り替えたいときはダッシュボードの「キャッシュをパージ」で個別に消してください（`?v=` 付きは初回から新しくなります）。
+
+### sitemap.xml
+
+`server/routes/sitemap.xml.ts` が生成します（DB の公開レビュー・楽曲を全件列挙）。
+
+```
+https://track.wawa-app.me/Vocaloid.hz/sitemap.xml
+```
+
+- URL は `getRequestURL(event).origin` + `runtimeConfig.app.baseURL` で組み立てるので、トンネル越しでも
+  正しい `https://<host>/Vocaloid.hz/...` になります。
+- **robots.txt は置けません**。robots.txt はホストのルートにしか置けず、Google はサブディレクトリの
+  robots.txt を読みません（このホストのルートは別アプリが返しています）。`Sitemap:` 行に頼らず、
+  Search Console の「サイトマップ」に上記 URL を直接入力して送信してください。
+
+### Search Console への登録
+
+1. プロパティは**URL プレフィックス**で `https://track.wawa-app.me/Vocaloid.hz/` を登録します
+   （ドメインプロパティは DNS がホスト単位のため、この構成では確認できません）。
+2. 確認方法は「HTML タグ」を選び、表示された `content` の値を `.env` に書いて再起動します。
+
+   ```
+   NUXT_PUBLIC_GOOGLE_SITE_VERIFICATION=<content の値>
+   ```
+
+   値が入っているときだけ `app.vue` が `<meta name="google-site-verification">` を出します
+   （未設定ならタグは出ません）。確認が済んだら消しても構いません。
+3. 「サイトマップ」に `sitemap.xml` の URL を送信します。
+4. ファビコンは Google 側の取得にも時間がかかります（数日〜数週間）。表示されないときは
+   Search Console の URL 検査でトップページをクロールし直すと早まることがあります。

@@ -1,12 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#07080b"/>
-  <g stroke="#1fb8a2" stroke-width="3.2" stroke-linecap="round">
-    <path d="M14 32v0"/>
-    <path d="M18 24v16"/>
-    <path d="M25 18v28"/>
-    <path d="M32 26v12"/>
-    <path d="M39 15v34"/>
-    <path d="M46 22v20"/>
-  </g>
-  <circle cx="50" cy="46" r="3.4" fill="#f5b861"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="vocaloid.hz">
+  <!--
+    vocaloid.hz ファビコン: 白地に水色の「v」（テーマ色 hz-600 → hz-200）。
+
+    字形はヘッダーのロゴ（AppHeader.vue の `font-mono font-bold` = ui-monospace 太字）と
+    同じ「v」。Chrome で 1200px に描いた SF Mono Bold の 'v' を画素スキャンして輪郭を取り、
+    左右対称に平均化した多角形をそのまま塗っている（丸い線ではなく直線の切株・角の接合）。
+      glyph box: 0.5221 em（幅） × 0.5610 em（高さ）= 実描画の比率
+      この値を変えるときは scripts/generate-favicon.mjs の GEOMETRY も揃えて更新する。
+  -->
+  <defs>
+    <linearGradient id="vhzV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#075985"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#FFFFFF"/>
+  <path d="M15.25 13.5 L23.05 13.5 L32 40.29 L40.95 13.5 L48.75 13.5 L35.58 49.5 L28.42 49.5 Z" fill="url(#vhzV)"/>
 </svg>
+
