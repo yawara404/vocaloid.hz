@@ -7,6 +7,8 @@
  *    それ以降に届いた来客の発言にまとめて返事をする（= 2 分に 1 回くらい）
  *  - 生成中は thinking = true。画面は「店主が考え中…」を出せる
  *  - 生成に失敗しても部屋が沈黙しないよう、その旨を店主の発言として残す
+ *  - 同じ語を延々繰り返す崩壊（『2011年… まだ… まだ…』）を防ぐため、
+ *    サンプリング（repeat_penalty など）を効かせ、崩壊した自分の発言は文脈から外す
  */
 import type { ChatMessage, LoungeAiStateDto, LoungeMessageDto } from '~~/shared/types'
 import { askOllama } from './ollama'
@@ -81,9 +83,32 @@ const MONOLOGUE_FALLBACK = '……棚の整理でもしようかね。ボカロ�
 /** 独り言の最大文字数。これを超えたら文の切れ目で切る */
 const MONOLOGUE_MAX_CHARS = 140
 
+/**
+ * repeat_penalty などをすり抜けたときの保険。
+ * 「まだ…まだ…まだ…」のような同一フレーズの連呼と、記号の連打（………）を 1 つに畳む。
+ */
+export function collapseAiRepeats(text: string): string {
+  return text
+    .replace(/(?:…|\.{3,}){2,}/g, '……')
+    .replace(/(.{1,8}?)(?:\s*\1){2,}/g, '$1')
+}
+
+/**
+ * 「同じ語を延々繰り返す」崩壊を検出する。
+ * （例: 『2011年… まだ… まだ… まだ…』『2022年…2022年…2022年…』）
+ *
+ * 崩壊した店主の発言をそのまま文脈に戻すと、次の生成が同じ口調を写して延々ループする。
+ * DB からは消さずに、文脈からだけ外すために使う。
+ */
+export function isDegenerateAiText(text: string): boolean {
+  if (!text) return false
+  if ((text.match(/…|\.\.\./g) ?? []).length >= 8) return true
+  return /(.{1,4}?)(?:\s*\1){3,}/.test(text)
+}
+
 /** 独り言が長くなりすぎたとき、文の切れ目で切って短く保つ（改行は 1 行にまとめる） */
 function trimMonologue(text: string): string {
-  const normalized = text.trim().replace(/\s*\n+\s*/g, ' ')
+  const normalized = collapseAiRepeats(text).trim().replace(/\s*\n+\s*/g, ' ')
   if (normalized.length <= MONOLOGUE_MAX_CHARS) return normalized
 
   const head = normalized.slice(0, MONOLOGUE_MAX_CHARS)
@@ -140,9 +165,16 @@ export function getLoungeAiState(): LoungeAiStateDto {
   }
 }
 
-/** 直近の会話を Ollama 用のメッセージ列にする（古い順）。末尾に合図を足せる */
-function conversationContext(cue?: string): ChatMessage[] {
+/**
+ * 直近の会話を Ollama 用のメッセージ列にする（古い順）。末尾に合図を足せる。
+ *
+ *  - 崩壊した店主の発言（isDegenerateAiText）は文脈から外す。自分の口癖を写してループするのを防ぐ
+ *  - excludeMonologues: 独り言づくりのときは、自分の独り言をすべて外す（同じ言い回しの再生産を断つ）
+ */
+function conversationContext(cue?: string, options: { excludeMonologues?: boolean } = {}): ChatMessage[] {
   const context: ChatMessage[] = listLoungeMessages(0)
+    .filter(message => !(message.role === 'assistant' && isDegenerateAiText(message.content)))
+    .filter(message => !(options.excludeMonologues && message.kind === 'monologue'))
     .slice(-CONTEXT_LIMIT)
     .map(message => ({ role: message.role, content: message.content }))
 
@@ -173,10 +205,14 @@ export async function runLoungeAiTurn(): Promise<void> {
       const reply = await askOllama(conversationContext(), {
         system: `${LOUNGE_AI_PERSONA}\n\n${SHARED_ROOM_NOTE}`,
       })
-      createLoungeAssistantMessage(reply || '（店主はうまく言葉にならなかったようです。もう一度投げてみてください）', 'reply')
+      createLoungeAssistantMessage(
+        collapseAiRepeats(reply) || '（店主はうまく言葉にならなかったようです。もう一度投げてみてください）',
+        'reply',
+      )
     }
     else {
-      const talk = await askOllama(conversationContext(monologueCue()), {
+      // 独り言は自分の独り言を文脈から外す。直前の独り言の口調を写して延々繰り返すのを防ぐ
+      const talk = await askOllama(conversationContext(monologueCue(), { excludeMonologues: true }), {
         system: `${LOUNGE_AI_PERSONA}\n\n${MONOLOGUE_NOTE}`,
         temperature: 0.9,
         numPredict: 160,

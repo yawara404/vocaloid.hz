@@ -9,7 +9,7 @@
  */
 import { Readable } from 'node:stream'
 import type { ChatMessage } from '~~/shared/types'
-import { normalizeKeepAlive } from '../utils/ollama'
+import { normalizeKeepAlive, ollamaOptions } from '../utils/ollama'
 import { LOUNGE_AI_PERSONA } from '../utils/lounge-ai'
 
 /** 店主のキャラクターは共有ラウンジと共通（server/utils/lounge-ai.ts） */
@@ -56,6 +56,8 @@ async function relayToOllama(event: any, messages: ChatMessage[], config: any) {
       keep_alive: normalizeKeepAlive(config.ollamaKeepAlive),
       stream: true,
       messages: [{ role: 'system', content: LOUNGE_AI_PERSONA }, ...messages],
+      // 繰り返し崩壊（同じ語の連呼）を防ぐサンプリング。NUXT_OLLAMA_* で調整できる
+      options: ollamaOptions(),
     }),
   }).catch(() => null)
 

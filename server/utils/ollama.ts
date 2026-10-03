@@ -41,13 +41,87 @@ export function ollamaEndpoint(chatUrl: string, path: string): URL {
   return url
 }
 
+/**
+ * サンプリングの既定値。
+ *
+ * gemma3:4b は「同じ語を延々繰り返す」崩壊（例: 『2011年… まだ… まだ… まだ…』）を
+ * 起こしやすい。repeat_penalty / repeat_last_n である程度抑え、それでも抜けてきたぶんを
+ * presence_penalty / frequency_penalty で減衰させる。num_predict は暴走を止める上限。
+ *
+ * すべて NUXT_OLLAMA_* （nuxt.config.ts の runtimeConfig）で上書きできる。
+ */
+export interface OllamaSampling {
+  temperature: number
+  topP: number
+  topK: number
+  minP: number
+  /** 直前 repeatLastN トークンに出た語の確率を下げる（1.0 で無効） */
+  repeatPenalty: number
+  /** repeat_penalty を見る範囲（トークン数） */
+  repeatLastN: number
+  /** 出た回数に比例して下げる（0 で無効） */
+  frequencyPenalty: number
+  /** 一度出た語をもう出しにくくする（0 で無効） */
+  presencePenalty: number
+  numPredict: number
+}
+
+export const DEFAULT_OLLAMA_SAMPLING: OllamaSampling = {
+  temperature: 0.7,
+  topP: 0.9,
+  topK: 40,
+  minP: 0.05,
+  repeatPenalty: 1.3,
+  repeatLastN: 256,
+  frequencyPenalty: 0.3,
+  presencePenalty: 0.3,
+  numPredict: 512,
+}
+
 export interface OllamaChatOptions {
   /** 先頭に差し込む system プロンプト */
   system?: string
   temperature?: number
   /** 生成する最大トークン数（独り言などを短く保つため） */
   numPredict?: number
+  topP?: number
+  topK?: number
+  minP?: number
+  repeatPenalty?: number
+  repeatLastN?: number
+  frequencyPenalty?: number
+  presencePenalty?: number
+  seed?: number
   timeoutMs?: number
+}
+
+/** runtimeConfig / 環境変数を数値に。空文字や未設定は fallback に戻す */
+function configNumber(value: unknown, fallback: number): number {
+  if (typeof value === 'string' && value.trim() === '') return fallback
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? numeric : fallback
+}
+
+/**
+ * Ollama に渡す options を組み立てる。
+ * 既定値（DEFAULT_OLLAMA_SAMPLING）→ NUXT_OLLAMA_* の上書き → 呼び出しごとの指定、の順に優先する。
+ * 返り値は Ollama の API と同じ snake_case のキー。
+ */
+export function ollamaOptions(overrides: OllamaChatOptions = {}): Record<string, number> {
+  const config = useRuntimeConfig()
+  const options: Record<string, number> = {
+    temperature: overrides.temperature ?? configNumber(config.ollamaTemperature, DEFAULT_OLLAMA_SAMPLING.temperature),
+    top_p: overrides.topP ?? configNumber(config.ollamaTopP, DEFAULT_OLLAMA_SAMPLING.topP),
+    top_k: overrides.topK ?? configNumber(config.ollamaTopK, DEFAULT_OLLAMA_SAMPLING.topK),
+    min_p: overrides.minP ?? configNumber(config.ollamaMinP, DEFAULT_OLLAMA_SAMPLING.minP),
+    repeat_penalty: overrides.repeatPenalty ?? configNumber(config.ollamaRepeatPenalty, DEFAULT_OLLAMA_SAMPLING.repeatPenalty),
+    repeat_last_n: overrides.repeatLastN ?? configNumber(config.ollamaRepeatLastN, DEFAULT_OLLAMA_SAMPLING.repeatLastN),
+    frequency_penalty: overrides.frequencyPenalty ?? configNumber(config.ollamaFrequencyPenalty, DEFAULT_OLLAMA_SAMPLING.frequencyPenalty),
+    presence_penalty: overrides.presencePenalty ?? configNumber(config.ollamaPresencePenalty, DEFAULT_OLLAMA_SAMPLING.presencePenalty),
+    num_predict: overrides.numPredict ?? configNumber(config.ollamaNumPredict, DEFAULT_OLLAMA_SAMPLING.numPredict),
+  }
+  if (overrides.seed !== undefined) options.seed = overrides.seed
+  return options
 }
 
 /**
@@ -72,7 +146,7 @@ export async function askOllama(messages: ChatMessage[], options: OllamaChatOpti
       messages: payload,
       stream: false,
       keep_alive: normalizeKeepAlive(config.ollamaKeepAlive),
-      options: { temperature: options.temperature ?? 0.7, num_predict: options.numPredict },
+      options: ollamaOptions(options),
     }),
     signal: AbortSignal.timeout(options.timeoutMs ?? 180_000),
   }).catch((caught) => {

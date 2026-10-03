@@ -107,8 +107,19 @@ export function lastUserMessageAt(userId: string): Date | null {
 }
 
 /** 来客の発言がひとつでもあるか（誰もいない部屋で独り言を始めないための判定） */
+/**
+ * この部屋に来客が来たことがあるか（一度も来ていない部屋では店主は黙っている）。
+ * 直近 100 件だけを見ると、店主の独り言で埋まったときに「誰もいない」と誤判定して
+ * 永久に黙り込むため、履歴全体に来客の発言があるかを見る。
+ */
 export function hasVisitorMessages(): boolean {
-  return listLoungeMessages(0).some(message => message.role === 'user')
+  const row = useDb()
+    .select({ id: schema.loungeMessages.id })
+    .from(schema.loungeMessages)
+    .where(eq(schema.loungeMessages.role, 'user'))
+    .limit(1)
+    .get()
+  return Boolean(row)
 }
 
 /** 来客の発言を共有チャットへ書き込む */

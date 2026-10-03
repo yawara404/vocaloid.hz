@@ -42,6 +42,12 @@ npm run dev            # http://localhost:3000（NUXT_APP_BASE_URL を設定し�
 | `NUXT_OLLAMA_URL` | `http://localhost:11434/api/chat` | Ollama の接続先 |
 | `NUXT_OLLAMA_MODEL` | `gemma3:4b` | 使うモデル |
 | `NUXT_OLLAMA_KEEP_ALIVE` | `5m` | VRAM に載せておく時間（`-1` で常時ロード） |
+| `NUXT_OLLAMA_REPEAT_PENALTY` | `1.3` | 直前 256 トークンに出た語の確率を下げる（繰り返し崩壊の対策） |
+| `NUXT_OLLAMA_REPEAT_LAST_N` | `256` | 上のペナルティを見る範囲（トークン数） |
+| `NUXT_OLLAMA_PRESENCE_PENALTY` | `0.3` | 一度出た語をもう出しにくくする（`0` で無効） |
+| `NUXT_OLLAMA_FREQUENCY_PENALTY` | `0.3` | 出現回数に比例して語を出しにくくする（`0` で無効） |
+| `NUXT_OLLAMA_TEMPERATURE` / `_TOP_P` / `_TOP_K` / `_MIN_P` | `0.7` / `0.9` / `40` / `0.05` | サンプリング |
+| `NUXT_OLLAMA_NUM_PREDICT` | `512` | 1 回の返事の最大トークン数（暴走を止める上限） |
 | `NUXT_LOUNGE_AI_INTERVAL_MS` | `120000` | 店主のひとりごとの間隔（ミリ秒） |
 | `NUXT_DB_PATH` | `./data/vocaloid.hz.db` | SQLite の保存先 |
 | `NUXT_SEED_PASSWORD` | `vocaloid.hz` | デモユーザーの初期パスワード（初回 seed のみ） |
@@ -64,6 +70,19 @@ curl http://localhost:11434/api/ps   # ロード中のモデルを確認
 - `/lounge` の「**店主を今読み込む**」を押すと `POST /api/lounge/warmup` が呼ばれ、先に VRAM へ読み込みます
 - 使わなくなると `NUXT_OLLAMA_KEEP_ALIVE` の時間でアイドル（アンロード）に戻ります
 - 未設定でもサイトは動きます（ラウンジの状態表示が「未設定」になるだけ）
+
+### 繰り返し崩壊（同じ語の連呼）への対策
+
+gemma3:4b は放っておくと『2011年… まだ… まだ… まだ…』のように同じ語を延々繰り返すことがあります。
+対策として、既定で次の 2 つを効かせています。
+
+1. **サンプリング**: `repeat_penalty` / `repeat_last_n` に加えて `presence_penalty` / `frequency_penalty` を掛け、
+   `num_predict` で 1 回の長さに上限を設けます（[環境変数](#3-環境変数)の `NUXT_OLLAMA_*` で調整可能）
+2. **文脈の掃除**: 独り言づくりのときは店主自身の過去の独り言を文脈から外し、
+   崩壊した発言（`server/utils/lounge-ai.ts` の `isDegenerateAiText`）は文脈に戻しません
+
+それでも崩壊する場合は `NUXT_OLLAMA_REPEAT_PENALTY` を 1.35〜1.5 に上げてみてください
+（上げすぎると語彙が不自然になります）。
 
 ## 5. OAuth（任意）
 
