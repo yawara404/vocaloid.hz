@@ -171,26 +171,26 @@ export default defineNuxtConfig({
     /** SQLite の保存先。実際の解決は server/database/db.ts（NUXT_DB_PATH / NUXT_DB_DIR）が行う。 */
     databaseFile: process.env.NUXT_DB_PATH || './data/vocaloid.hz.db',
     ollamaUrl: 'http://localhost:11434/api/chat',
-    ollamaModel: 'gemma3:4b',
-    /** gemma を VRAM に載せておく時間。既定の '5m' は「使ってから 5 分でアイドル（アンロード）に戻る」 */
+    ollamaModel: 'qwen3:8b',
+    /** モデルを VRAM に載せておく時間。既定の '5m' は「使ってから 5 分でアイドル（アンロード）に戻る」 */
     ollamaKeepAlive: '5m',
     /**
      * サンプリング（「同じ語を延々繰り返す」崩壊の対策）。既定値は server/utils/ollama.ts の
      * DEFAULT_OLLAMA_SAMPLING。NUXT_OLLAMA_REPEAT_PENALTY などで上書きできる。
      */
-    ollamaTemperature: 0.7,
+    ollamaTemperature: 0.2,
     ollamaTopP: 0.9,
     ollamaTopK: 40,
     ollamaMinP: 0.05,
     /** 直前 ollamaRepeatLastN トークンに出た語の確率を下げる（1.0 で無効） */
-    ollamaRepeatPenalty: 1.3,
+    ollamaRepeatPenalty: 1.1,
     ollamaRepeatLastN: 256,
-    /** 語の出現回数・有無に応じた減衰。繰り返し崩壊の取りこぼしを防ぐ（0 で無効） */
-    ollamaFrequencyPenalty: 0.3,
-    ollamaPresencePenalty: 0.3,
+    /** 語の出現回数・有無に応じた減衰。固有名詞の改変を避けるため既定は無効 */
+    ollamaFrequencyPenalty: 0,
+    ollamaPresencePenalty: 0,
     /** 1 回の返事の最大トークン数（暴走を止める上限。独り言はこの値より短く指定する） */
     ollamaNumPredict: 512,
-    /** AI ラウンジで店主（gemma）がひとりごとを呟く間隔。既定は 2 分に 1 回（「店主さん」と呼ばれた返事はこの間隔を待たない） */
+    /** AI ラウンジで店主（Qwen）がひとりごとを呟く間隔。既定は 2 分に 1 回（「店主さん」と呼ばれた返事はこの間隔を待たない） */
     loungeAiIntervalMs: 120_000,
     discordWebhookUrl: '',
     discordBotToken: '',

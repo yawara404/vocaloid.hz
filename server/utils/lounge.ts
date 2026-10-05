@@ -15,7 +15,7 @@ import { schema, useDb } from './db'
 const PAGE_SIZE = 100
 
 /** 店主（AI）の発言者名 */
-export const LOUNGE_AI_DISPLAY_NAME = '店主（gemma）'
+export const LOUNGE_AI_DISPLAY_NAME = '店主（AI）'
 
 /** カーソル（?after=）を安全な数値に */
 export function parseLoungeCursor(value: unknown): number {

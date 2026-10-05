@@ -96,14 +96,9 @@ export interface ShelfTrack {
 /** 棚から外す「テスト用らしい」語（テストP の曲などを店主に喋らせない） */
 const TEST_TRACK_PATTERN = /テスト|検証|サンプル|sample|test|dummy/i
 
-/**
- * 店主のひとりごと用に「棚の一枚」をランダムに選ぶ。
- * サイトの楽曲ライブラリに登録済みの曲なので、実在する曲名・ボカロP・使用ライブラリで話せる。
- *  - テスト用として登録された曲（テストP / 検証P など）は棚から外す
- *  - avoidContents に含まれる曲（直近で話した盤）は避け、全部避けてしまうときだけ戻す
- */
-export function pickRandomShelfTrack(options: { avoidContents?: string[] } = {}): ShelfTrack | null {
-  const rows = useDb()
+/** 店主に渡すサイト登録情報。外部資料での検証済みという意味ではない。 */
+export function loungeTrackFacts(): ShelfTrack[] {
+  return useDb()
     .select({
       title: schema.tracks.title,
       producerName: schema.tracks.producerName,
@@ -113,12 +108,18 @@ export function pickRandomShelfTrack(options: { avoidContents?: string[] } = {})
     .from(schema.tracks)
     .all()
     .filter(row => !TEST_TRACK_PATTERN.test(row.title) && !TEST_TRACK_PATTERN.test(row.producerName))
+}
+
+/** 独り言の盤を選ぶ。全曲既出なら、最後に話してから最も間が空いた曲にする。 */
+export function pickRandomShelfTrack(options: { avoidContents?: string[] } = {}): ShelfTrack | null {
+  const rows = loungeTrackFacts()
 
   if (rows.length === 0) return null
 
   const avoid = options.avoidContents ?? []
-  const fresh = rows.filter(row => !avoid.some(content => content.includes(row.title)))
-  const pool = fresh.length > 0 ? fresh : rows
+  const lastMention = (title: string) => avoid.findLastIndex(content => content.includes(title))
+  const oldest = Math.min(...rows.map(row => lastMention(row.title)))
+  const pool = rows.filter(row => lastMention(row.title) === oldest)
 
   return pool[Math.floor(Math.random() * pool.length)] ?? null
 }

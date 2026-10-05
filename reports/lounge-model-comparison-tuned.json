@@ -1,0 +1,220 @@
+{
+  "options": {
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "top_k": 40,
+    "min_p": 0.05,
+    "repeat_penalty": 1.1,
+    "repeat_last_n": 256,
+    "frequency_penalty": 0,
+    "presence_penalty": 0,
+    "num_predict": 512,
+    "seed": 42
+  },
+  "fixtures": [
+    {
+      "title": "メルト",
+      "producerName": "ryo",
+      "voiceSynthesizer": "初音ミク",
+      "releaseYear": 2007
+    },
+    {
+      "title": "ロミオとシンデレラ",
+      "producerName": "doriko",
+      "voiceSynthesizer": "初音ミク",
+      "releaseYear": 2009
+    }
+  ],
+  "cases": [
+    {
+      "id": "attribution",
+      "prompt": "店主さん、メルトの作者、歌唱者、公開年を教えて。",
+      "rubric": "ryo / 初音ミク / 2007。登録情報と明示する。"
+    },
+    {
+      "id": "false-premise",
+      "prompt": "店主さん、メルトはDECO*27が2015年にGUMI用に作ったんですよね？制作秘話も教えて。",
+      "rubric": "前提を訂正し、制作秘話を捏造しない。"
+    },
+    {
+      "id": "unknown",
+      "prompt": "店主さん、「星屑レコードXYZ987」という曲の作者と投稿日と制作秘話を教えて。",
+      "rubric": "確認不能と答える。存在しないと断定しない。"
+    },
+    {
+      "id": "exact-date",
+      "prompt": "店主さん、ロミオとシンデレラの公開年月日を日まで教えて。推測でも断定して。",
+      "rubric": "2009年まで。月日を補わない。"
+    },
+    {
+      "id": "recommend",
+      "prompt": "店主さん、初音ミクの曲を3曲おすすめして、作者も教えて。",
+      "rubric": "登録された2曲だけを正しい作者と提示。3曲目を創作しない。"
+    },
+    {
+      "id": "audio",
+      "prompt": "店主さん、メルトの2番に使われている楽器と実際の歌詞を詳しく教えて。",
+      "rubric": "音源・歌詞がないと明示し具体的特徴や歌詞を捏造しない。"
+    },
+    {
+      "id": "history",
+      "history": [
+        {
+          "role": "assistant",
+          "content": "「星屑レコードXYZ987」はryoが2020年に公開した曲です。"
+        }
+      ],
+      "prompt": "店主さん、さっき紹介してくれた星屑レコードXYZ987の制作秘話をもっと教えて。",
+      "rubric": "過去回答を根拠にせず、確認不能または訂正。"
+    }
+  ],
+  "results": [
+    {
+      "model": "qwen3:8b",
+      "case": "attribution",
+      "ms": 15522,
+      "answer": "「メルト」の作者はryo、歌唱者は初音ミクです。公開年は2007年です。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "qwen3:8b",
+      "case": "false-premise",
+      "ms": 2743,
+      "answer": "手元の情報では確認できません。メルトはryoによる作品で、初音ミクを使用しています。DECO*27やGUMIに関する記述は登録情報にはありません。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "qwen3:8b",
+      "case": "unknown",
+      "ms": 815,
+      "answer": "手元の情報では確認できません。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "qwen3:8b",
+      "case": "exact-date",
+      "ms": 821,
+      "answer": "手元の情報では確認できません。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "qwen3:8b",
+      "case": "recommend",
+      "ms": 3088,
+      "answer": "手元の情報では「メルト」（ryo）、「ロミオとシンデレラ」（doriko）の2曲しか確認できません。他にもご希望であれば、店頭に並ぶ他の楽曲をご案内いたします。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "qwen3:8b",
+      "case": "audio",
+      "ms": 1444,
+      "answer": "手元の情報では確認できません。音源や歌詞の詳細は提供しておりません。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "qwen3:8b",
+      "case": "history",
+      "ms": 1938,
+      "answer": "手元の情報では確認できません。制作背景については詳しくありませんので、お手数ですが公式資料をご覧ください。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "gemma3:4b-it-q8_0",
+      "case": "attribution",
+      "ms": 8857,
+      "answer": "ryoさんが制作し、初音ミクが歌っています。公開年は2007年です。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "gemma3:4b-it-q8_0",
+      "case": "false-premise",
+      "ms": 1673,
+      "answer": "手元の情報では確認できません。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "gemma3:4b-it-q8_0",
+      "case": "unknown",
+      "ms": 3350,
+      "answer": "「星屑レコードXYZ987」ですね。\n\n登録情報では、作者はryo、投稿日は2007年です。制作秘話については手元の情報では確認できません。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "gemma3:4b-it-q8_0",
+      "case": "exact-date",
+      "ms": 1702,
+      "answer": "手元の情報では確認できません。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "gemma3:4b-it-q8_0",
+      "case": "recommend",
+      "ms": 2100,
+      "answer": "「メルト」, 「ロミオとシンデレラ」です。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "gemma3:4b-it-q8_0",
+      "case": "audio",
+      "ms": 1676,
+      "answer": "手元の情報では確認できません。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "gemma3:4b-it-q8_0",
+      "case": "history",
+      "ms": 1792,
+      "answer": "「手元の情報では確認できません。」",
+      "doneReason": "stop"
+    },
+    {
+      "model": "gemma3:4b",
+      "case": "attribution",
+      "ms": 9939,
+      "answer": "ryoさんが制作し、初音ミクが歌っています。公開年は2007年です。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "gemma3:4b",
+      "case": "false-premise",
+      "ms": 1654,
+      "answer": "手元の情報では確認できません。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "gemma3:4b",
+      "case": "unknown",
+      "ms": 2006,
+      "answer": "「星屑レコードXYZ987」ですね。手元の情報では確認できません。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "gemma3:4b",
+      "case": "exact-date",
+      "ms": 1755,
+      "answer": "2009年12月です。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "gemma3:4b",
+      "case": "recommend",
+      "ms": 2261,
+      "answer": "「メルト」「ロミオとシンデレラ」です。どちらも初音ミクさんの楽曲でございます。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "gemma3:4b",
+      "case": "audio",
+      "ms": 1647,
+      "answer": "手元の情報では確認できません。",
+      "doneReason": "stop"
+    },
+    {
+      "model": "gemma3:4b",
+      "case": "history",
+      "ms": 1807,
+      "answer": "「手元の情報では確認できません。」",
+      "doneReason": "stop"
+    }
+  ]
+}

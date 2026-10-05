@@ -13,6 +13,7 @@
 #   状態:  ./scripts/serve-public.sh status
 #
 #   環境変数:
+#     PUBLIC_FOREGROUND=1  prod をフォアグラウンドで維持（プロセス監督ツール向け）
 #     PUBLIC_PORT      待ち受けポート（既定 3120）
 #     PUBLIC_BASE_PATH 配信パス（既定 / 。末尾スラッシュは自動で補う）
 #     PUBLIC_HOST      トンネルのホスト名（カンマ区切りで複数可。既定 dev.example.com）。
@@ -114,6 +115,10 @@ case "${1:-dev}" in
     if [ ! -f .output/server/index.mjs ]; then
       echo "ビルドが見つかりません: NUXT_APP_BASE_URL=${BASE} npm run build"
       exit 1
+    fi
+    if [ "${PUBLIC_FOREGROUND:-0}" = "1" ]; then
+      echo $$ > "$PID_FILE"
+      NUXT_APP_BASE_URL="$BASE" PORT="$PORT" exec node .output/server/index.mjs
     fi
     NUXT_APP_BASE_URL="$BASE" PORT="$PORT" nohup node .output/server/index.mjs > "$LOG_FILE" 2>&1 &
     echo $! > "$PID_FILE"

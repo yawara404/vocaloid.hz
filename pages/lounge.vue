@@ -162,6 +162,9 @@ async function submit(): Promise<void> {
 }
 
 function onKeydown(event: KeyboardEvent): void {
+  // isComposing（IME 変換中）の Enter は確定キーなので送信しない
+  // keyCode 229 は Android や古いブラウザの変換中の Enter に残る
+  if (event.isComposing || event.keyCode === 229) return
   if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault()
     void submit()

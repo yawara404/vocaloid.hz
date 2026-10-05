@@ -8,7 +8,7 @@ import { findRunningModel, normalizeKeepAlive, ollamaEndpoint } from '../../util
 export default defineEventHandler(async (): Promise<LoungeStatus> => {
   const config = useRuntimeConfig()
   const keepAlive = normalizeKeepAlive(config.ollamaKeepAlive)
-  const model = config.ollamaModel || 'gemma3:4b'
+  const model = config.ollamaModel || 'qwen3:8b'
 
   const ollamaConfigured = Boolean(config.ollamaUrl)
   let ollamaReady = false

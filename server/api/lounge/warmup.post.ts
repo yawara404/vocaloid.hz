@@ -11,7 +11,7 @@ export default defineEventHandler(async () => {
     throw createError({ statusCode: 501, message: 'Ollama の接続先が設定されていません（NUXT_OLLAMA_URL）' })
   }
 
-  const model = config.ollamaModel || 'gemma3:4b'
+  const model = config.ollamaModel || 'qwen3:8b'
   const response = await fetch(config.ollamaUrl, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -19,6 +19,7 @@ export default defineEventHandler(async () => {
       model,
       messages: [{ role: 'user', content: 'ping' }],
       stream: false,
+      think: false,
       options: { num_predict: 1 },
       keep_alive: normalizeKeepAlive(config.ollamaKeepAlive),
     }),
@@ -28,7 +29,7 @@ export default defineEventHandler(async () => {
     const detail = await response?.json().catch(() => null) as { error?: string } | null
     throw createError({
       statusCode: 502,
-      message: detail?.error || `gemma を読み込めませんでした（${response?.status ?? 'network error'}）。Ollama の起動状態とモデル名を確認してください。`,
+      message: detail?.error || `AI モデルを読み込めませんでした（${response?.status ?? 'network error'}）。Ollama の起動状態とモデル名を確認してください。`,
     })
   }
 

@@ -44,9 +44,9 @@ export function ollamaEndpoint(chatUrl: string, path: string): URL {
 /**
  * サンプリングの既定値。
  *
- * gemma3:4b は「同じ語を延々繰り返す」崩壊（例: 『2011年… まだ… まだ… まだ…』）を
- * 起こしやすい。repeat_penalty / repeat_last_n である程度抑え、それでも抜けてきたぶんを
- * presence_penalty / frequency_penalty で減衰させる。num_predict は暴走を止める上限。
+ * ローカル3モデルの比較で Qwen 3 8B を採用。強い減衰は固有名詞を崩したため、
+ * repeat_penalty は軽く、presence / frequency_penalty は無効にする。
+ * 繰り返し崩壊はラウンジ側でも検出する。比較結果は reports/lounge-model-selection.md。
  *
  * すべて NUXT_OLLAMA_* （nuxt.config.ts の runtimeConfig）で上書きできる。
  */
@@ -67,14 +67,14 @@ export interface OllamaSampling {
 }
 
 export const DEFAULT_OLLAMA_SAMPLING: OllamaSampling = {
-  temperature: 0.7,
+  temperature: 0.2,
   topP: 0.9,
   topK: 40,
   minP: 0.05,
-  repeatPenalty: 1.3,
+  repeatPenalty: 1.1,
   repeatLastN: 256,
-  frequencyPenalty: 0.3,
-  presencePenalty: 0.3,
+  frequencyPenalty: 0,
+  presencePenalty: 0,
   numPredict: 512,
 }
 
@@ -142,9 +142,10 @@ export async function askOllama(messages: ChatMessage[], options: OllamaChatOpti
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      model: config.ollamaModel || 'gemma3:4b',
+      model: config.ollamaModel || 'qwen3:8b',
       messages: payload,
       stream: false,
+      think: false,
       keep_alive: normalizeKeepAlive(config.ollamaKeepAlive),
       options: ollamaOptions(options),
     }),
